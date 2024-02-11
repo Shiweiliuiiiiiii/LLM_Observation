@@ -1,0 +1,3 @@
+for key in step_0 step_1100000 step_1300000 step_1500000 step_1700000 step_1900000 step_2000000 step_400000 step_600000 step_800000 step_100000 step_120000 step_140000 step_160000 step_180000 step_20000 step_300000 step_500000 step_700000 step_900000 step_1000000 step_1200000 step_1400000 step_1600000 step_1800000 step_200000 step_40000 step_60000 step_80000; do
+transformers-cli convert --model_type bert --tf_checkpoint seed_0/${key}/bert.ckpt --config bert_config.json --pytorch_dump_output bert_seed0_${key}.pt
+done 
