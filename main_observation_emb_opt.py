@@ -574,13 +574,14 @@ def main():
 
         for name, m in model.named_modules():
             if isinstance(m, OPTAttention_norm_A_V):
-                print(m)
                 layer = int(name.split('.')[3])
 
                 if layer in v_norm:
                     v_norm[layer].append(m.v_norm.cpu().numpy().reshape(-1))
                     a_norm[layer].append(m.a_norm.cpu().numpy().reshape(-1))
                 else:
+                    import pdb;
+                    pdb.set_trace()
                     v_norm[layer].append(m.v_norm.cpu().numpy().reshape(-1))
                     a_norm[layer].append(m.a_norm.cpu().numpy().reshape(-1))
 
