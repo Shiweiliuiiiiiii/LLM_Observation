@@ -565,8 +565,6 @@ def main():
     a_norm = {}
 
     for iterations, batch in enumerate(eval_dataloader):
-        if iterations >= 1:
-            break
         with torch.no_grad():
             outputs = model(**batch)
             assert batch['input_ids'].shape[0] == 1 # batch-size = 1
@@ -586,6 +584,8 @@ def main():
                     # pdb.set_trace()
                     v_norm[layer] = [m.v_norm.cpu().numpy().reshape(-1)]
                     a_norm[layer] = [m.v_norm.cpu().numpy().reshape(-1)]
+                    import pdb;
+                    pdb.set_trace()
 
         print('Status: [{}/{}]'.format(iterations+1, len(eval_dataloader)))
 
