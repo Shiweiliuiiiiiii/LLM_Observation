@@ -64,7 +64,7 @@ from transformers import GPTNeoXForCausalLM, AutoTokenizer
 
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
 
-from utils import OPTDecoderLayer_Outemb, convert_opt_emb_orth_output, convert_opt_attention_norm
+from utils import OPTDecoderLayer_Outemb, OPTAttention_norm_A_V, convert_opt_emb_orth_output, convert_opt_attention_norm
 
 logger = get_logger(__name__)
 
@@ -561,8 +561,8 @@ def main():
     # Calculate the Cosine Similarity
     model.eval()
     losses = []
-    result_before = {}
-    result_after = {}
+    v_norm = {}
+    a_norm = {}
 
     for iterations, batch in enumerate(eval_dataloader):
         with torch.no_grad():
@@ -573,24 +573,25 @@ def main():
             losses.append(accelerator.gather_for_metrics(loss.repeat(args.per_device_eval_batch_size)))
 
         for name, m in model.named_modules():
-            if isinstance(m, OPTDecoderLayer_Outemb):
+            if isinstance(m, OPTAttention_norm_A_V):
                 layer = int(name.split('.')[3])
 
-                if layer in result_before:
-                    result_before[layer].append(m.cosine_before.cpu().numpy().reshape(-1))
-                    result_after[layer].append(m.cosine_after.cpu().numpy().reshape(-1))
+                if layer in v_norm:
+                    v_norm[layer].append(m.v_norm.cpu().numpy().reshape(-1))
+                    a_norm[layer].append(m.a_norm.cpu().numpy().reshape(-1))
                 else:
-                    result_before[layer] = [m.cosine_before.cpu().numpy().reshape(-1)]
-                    result_after[layer] = [m.cosine_after.cpu().numpy().reshape(-1)]
+                    v_norm[layer].append(m.v_norm.cpu().numpy().reshape(-1))
+                    a_norm[layer].append(m.a_norm.cpu().numpy().reshape(-1))
 
         print('Status: [{}/{}]'.format(iterations+1, len(eval_dataloader)))
 
-    for key in result_before:
-        cosine_before = np.concatenate(result_before[key], axis=-1)
-        result_before[key] = cosine_before
 
-        cosine_after = np.concatenate(result_after[key], axis=-1)
-        result_after[key] = cosine_after
+    for key in v_norm:
+        v_norm_all = np.concatenate(v_norm[key], axis=-1)
+        v_norm[key] = v_norm_all
+
+        a_norm_all = np.concatenate(a_norm[key], axis=-1)
+        a_norm[key] = a_norm_all
 
     losses = torch.cat(losses)
     try:
@@ -600,8 +601,8 @@ def main():
         perplexity = float("inf")
     logger.info(f"Test: perplexity: {perplexity} test_loss: {eval_loss}")
 
-    torch.save(result_before, '{}-emb_before-abs.pt'.format(args.output_name))
-    torch.save(result_after, '{}-emb_after-abs.pt'.format(args.output_name))
+    torch.save(v_norm, '{}-v-norm.pt'.format(args.output_name))
+    torch.save(a_norm, '{}-a-norm.pt'.format(args.output_name))
 
 if __name__ == "__main__":
     main()

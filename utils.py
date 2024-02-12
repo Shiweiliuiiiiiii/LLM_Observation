@@ -137,9 +137,6 @@ class OPTAttention_norm_A_V(nn.Module):
         self.v_norm = value_states.norm(dim=1)
         # calculate column norm of A
         self.a_norm = attn_weights.norm(dim=0)
-        # save
-        torch.save(self.v_norm, 'v_norm.pt')
-        torch.save(self.a_norm, 'A_norm.pt')
 
 
         if attn_weights.size() != (bsz * self.num_heads, tgt_len, src_len):
