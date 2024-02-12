@@ -584,8 +584,7 @@ def main():
                     # pdb.set_trace()
                     v_norm[layer] = [m.v_norm.cpu().numpy().reshape(-1)]
                     a_norm[layer] = [m.v_norm.cpu().numpy().reshape(-1)]
-                    import pdb;
-                    pdb.set_trace()
+
 
         print('Status: [{}/{}]'.format(iterations+1, len(eval_dataloader)))
 
@@ -605,6 +604,9 @@ def main():
         perplexity = float("inf")
     logger.info(f"Test: perplexity: {perplexity} test_loss: {eval_loss}")
 
+    import pdb;
+    pdb.set_trace()
+    
     torch.save(v_norm, '{}-v-norm.pt'.format(args.output_name))
     torch.save(a_norm, '{}-a-norm.pt'.format(args.output_name))
 
