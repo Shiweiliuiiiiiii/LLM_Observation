@@ -574,6 +574,7 @@ def main():
 
         for name, m in model.named_modules():
             if isinstance(m, OPTAttention_norm_A_V):
+                print(m)
                 layer = int(name.split('.')[3])
 
                 if layer in v_norm:
