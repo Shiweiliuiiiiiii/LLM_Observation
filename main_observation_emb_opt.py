@@ -565,6 +565,8 @@ def main():
     a_norm = {}
 
     for iterations, batch in enumerate(eval_dataloader):
+        if iterations >= 2:
+            break
         with torch.no_grad():
             outputs = model(**batch)
             assert batch['input_ids'].shape[0] == 1 # batch-size = 1
@@ -606,7 +608,7 @@ def main():
 
     import pdb;
     pdb.set_trace()
-    
+
     torch.save(v_norm, '{}-v-norm.pt'.format(args.output_name))
     torch.save(a_norm, '{}-a-norm.pt'.format(args.output_name))
 
