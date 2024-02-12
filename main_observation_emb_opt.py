@@ -64,7 +64,7 @@ from transformers import GPTNeoXForCausalLM, AutoTokenizer
 
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
 
-from utils import OPTDecoderLayer_Outemb, convert_opt_emb_orth_output
+from utils import OPTDecoderLayer_Outemb, convert_opt_emb_orth_output, convert_opt_attention_norm
 
 logger = get_logger(__name__)
 
@@ -403,7 +403,8 @@ def main():
             revision=args.revision, cache_dir=args.cache_dir)
 
     pretrained_weight = copy.deepcopy(model.state_dict())
-    model = convert_opt_emb_orth_output(model, config)
+    # model = convert_opt_emb_orth_output(model, config)
+    model = convert_opt_attention_norm(model, config)
     model.load_state_dict(pretrained_weight, strict=True)
 
     print(model)
