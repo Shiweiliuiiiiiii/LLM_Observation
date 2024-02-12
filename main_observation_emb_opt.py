@@ -565,6 +565,8 @@ def main():
     a_norm = {}
 
     for iterations, batch in enumerate(eval_dataloader):
+        if batch >= 1:
+            break
         with torch.no_grad():
             outputs = model(**batch)
             assert batch['input_ids'].shape[0] == 1 # batch-size = 1
