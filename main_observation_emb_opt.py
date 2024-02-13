@@ -581,8 +581,8 @@ def main():
                 if layer in v_norm:
                     v_norm[layer].append(m.v_norm.cpu().numpy().reshape(-1))
                     a_norm[layer].append(m.a_norm.cpu().numpy().reshape(-1))
-                    import pdb
-                    pdb.set_trace()
+                    # import pdb
+                    # pdb.set_trace()
                 else:
                     v_norm[layer] = [m.v_norm.cpu().numpy().reshape(-1)]
                     a_norm[layer] = [m.a_norm.cpu().numpy().reshape(-1)]
@@ -591,21 +591,21 @@ def main():
         print('Status: [{}/{}]'.format(iterations+1, len(eval_dataloader)))
 
 
-    for key in v_norm:
-        v_norm_all = np.concatenate(v_norm[key], axis=-1)
-        v_norm[key] = v_norm_all
-
-        a_norm_all = np.concatenate(a_norm[key], axis=-1)
-        a_norm[key] = a_norm_all
-
-    losses = torch.cat(losses)
-    try:
-        eval_loss = torch.mean(losses)
-        perplexity = math.exp(eval_loss)
-    except OverflowError:
-        perplexity = float("inf")
-    logger.info(f"Test: perplexity: {perplexity} test_loss: {eval_loss}")
-
+    # for key in v_norm:
+    #     v_norm_all = np.concatenate(v_norm[key], axis=-1)
+    #     v_norm[key] = v_norm_all
+    #
+    #     a_norm_all = np.concatenate(a_norm[key], axis=-1)
+    #     a_norm[key] = a_norm_all
+    #
+    # losses = torch.cat(losses)
+    # try:
+    #     eval_loss = torch.mean(losses)
+    #     perplexity = math.exp(eval_loss)
+    # except OverflowError:
+    #     perplexity = float("inf")
+    # logger.info(f"Test: perplexity: {perplexity} test_loss: {eval_loss}")
+    #
 
     torch.save(v_norm, '{}-v-norm.pt'.format(args.output_name))
     torch.save(a_norm, '{}-a-norm.pt'.format(args.output_name))
