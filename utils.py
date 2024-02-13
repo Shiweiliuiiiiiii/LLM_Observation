@@ -181,13 +181,13 @@ class OPTAttention_norm_A_V(nn.Module):
 
 
         # calculate row norm of Value
-        self.v_norm = value_states.norm(dim=2)
+        self.v_norm = value_states.norm(dim=2).view(-1)
         # calculate column norm of A
-        self.a_norm = attn_weights.norm(dim=1)
+        self.a_norm = attn_weights.norm(dim=1).view(-1)
 
         import pdb
         pdb.set_trace()
-        
+
         attn_output = torch.bmm(attn_probs, value_states)
 
         if attn_output.size() != (bsz * self.num_heads, tgt_len, self.head_dim):
