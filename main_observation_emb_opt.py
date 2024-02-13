@@ -585,7 +585,7 @@ def main():
                     # import pdb;
                     # pdb.set_trace()
                     v_norm[layer] = [m.v_norm.cpu().numpy().reshape(-1)]
-                    a_norm[layer] = [m.v_norm.cpu().numpy().reshape(-1)]
+                    a_norm[layer] = [m.a_norm.cpu().numpy().reshape(-1)]
 
 
         print('Status: [{}/{}]'.format(iterations+1, len(eval_dataloader)))
