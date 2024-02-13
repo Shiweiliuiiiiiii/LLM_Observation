@@ -179,14 +179,15 @@ class OPTAttention_norm_A_V(nn.Module):
 
         attn_probs = nn.functional.dropout(attn_weights, p=self.dropout, training=self.training)
 
+
+        # calculate row norm of Value
+        self.v_norm = value_states.norm(dim=2)
+        # calculate column norm of A
+        self.a_norm = attn_weights.norm(dim=1)
+
         import pdb
         pdb.set_trace()
-        # calculate row norm of Value
-        self.v_norm = value_states.norm(dim=1)
-        # calculate column norm of A
-        self.a_norm = attn_weights.norm(dim=0)
-
-
+        
         attn_output = torch.bmm(attn_probs, value_states)
 
         if attn_output.size() != (bsz * self.num_heads, tgt_len, self.head_dim):
