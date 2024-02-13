@@ -581,8 +581,9 @@ def main():
                 if layer in v_norm:
                     v_norm[layer].append(m.v_norm.cpu().numpy().reshape(-1))
                     a_norm[layer].append(m.a_norm.cpu().numpy().reshape(-1))
+                    import pdb
+                    pdb.set_trace()
                 else:
-
                     v_norm[layer] = [m.v_norm.cpu().numpy().reshape(-1)]
                     a_norm[layer] = [m.a_norm.cpu().numpy().reshape(-1)]
 
@@ -604,8 +605,7 @@ def main():
     except OverflowError:
         perplexity = float("inf")
     logger.info(f"Test: perplexity: {perplexity} test_loss: {eval_loss}")
-    # import pdb
-    # pdb.set_trace()
+
 
     torch.save(v_norm, '{}-v-norm.pt'.format(args.output_name))
     torch.save(a_norm, '{}-a-norm.pt'.format(args.output_name))
