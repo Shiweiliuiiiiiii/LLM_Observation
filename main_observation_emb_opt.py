@@ -604,8 +604,8 @@ def main():
     except OverflowError:
         perplexity = float("inf")
     logger.info(f"Test: perplexity: {perplexity} test_loss: {eval_loss}")
-    import pdb
-    pdb.set_trace()
+    # import pdb
+    # pdb.set_trace()
 
     torch.save(v_norm, '{}-v-norm.pt'.format(args.output_name))
     torch.save(a_norm, '{}-a-norm.pt'.format(args.output_name))
