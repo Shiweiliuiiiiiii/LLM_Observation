@@ -609,8 +609,8 @@ def main():
     import pdb;
     pdb.set_trace()
 
-    torch.save(v_norm, 'tmp/{}-v-norm.pt'.format(args.output_name))
-    torch.save(a_norm, 'tmp/{}-a-norm.pt'.format(args.output_name))
+    torch.save(v_norm, '{}-v-norm.pt'.format(args.output_name))
+    torch.save(a_norm, '{}-a-norm.pt'.format(args.output_name))
 
 if __name__ == "__main__":
     main()
