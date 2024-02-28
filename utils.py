@@ -46,15 +46,18 @@ class OPTAttention_norm_A_V(nn.Module):
         self,
         embed_dim: int,
         num_heads: int,
+        sample_size: int,
         dropout: float = 0.0,
         is_decoder: bool = False,
         bias: bool = True,
+        sketching_method: str = 'random'
     ):
         super().__init__()
         self.embed_dim = embed_dim
         self.num_heads = num_heads
         self.dropout = dropout
         self.head_dim = embed_dim // num_heads
+        self.sample_size = sample_size
 
         if (self.head_dim * num_heads) != self.embed_dim:
             raise ValueError(
@@ -72,6 +75,8 @@ class OPTAttention_norm_A_V(nn.Module):
         self.attn_score_values = None
         self.v_norm = None
         self.a_norm = None
+        self.att_error = None
+        self.sketching_method = sketching_method
 
     def _shape(self, tensor: torch.Tensor, seq_len: int, bsz: int):
         return tensor.view(bsz, seq_len, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
@@ -179,14 +184,35 @@ class OPTAttention_norm_A_V(nn.Module):
 
         attn_probs = nn.functional.dropout(attn_weights, p=self.dropout, training=self.training)
 
-
         # calculate row norm of Value: 32 heads * 1024 dims
         self.v_norm = value_states.norm(dim=2)
+        import pdb
+        pdb.set_trace()
         # calculate column norm of A: 32 heads * 1024 dims
         self.a_norm = attn_weights.norm(dim=1)
 
+        # 1. sampling m from V matrix
+        batch_size, head_size, n_query, dim = value_states.shape
+        n_key = value_states.shape[2]
+
+        if self.sketching_method == 'random':
+            sampled_set = torch.randint(n_key, size=(batch_size, head_size, self.sample_size), device=value_states.device)
+        elif self.sketching_method == 'l2':
+            index = np.argsort(self.v_norm)[::-1]
+            sampled_set = torch.randint(n_key, size=(batch_size, head_size, self.sample_size), device=value_states.device)
+
+
+         # value_subset.shape = [b, h, s, d], s < n
+        value_subset = indexing(value_states, sampled_set)
+        attn_subset = indexing(attn_probs.transpose(-1,-2), sampled_set).transpose(-1,-2)
+
 
         attn_output = torch.bmm(attn_probs, value_states)
+        # m = |attn_probs*value_states - attn_subset*value_subset| / attn_probs*value_states
+        attn_output_sub = torch.bmm(attn_subset, value_subset)
+
+        self.att_error = torch.norm(attn_output - attn_output_sub, p='fro')
+
 
         if attn_output.size() != (bsz * self.num_heads, tgt_len, self.head_dim):
             raise ValueError(
@@ -392,6 +418,8 @@ def convert_opt_attention_norm(model, config):
                 dropout=config.attention_dropout,
                 is_decoder=True,
                 bias=config.enable_bias,
+                sample_size=config.sample_size,
+                sketching_method=config.sketching_method,
             )
     return model
 
@@ -1346,3 +1374,27 @@ def convert_llama_emb_orth_output_Modify_new(model, config):
             model._modules[name] = LlamaDecoderLayer_Outemb_Modify_new(config)
     return model
 
+def indexing(x, indices, chunk_size=-1):
+    """
+    inputs:
+        - x: 4d-tensor with shape [b, h, n, d]
+        - indices: 3d-tensor with shape [b, h, s] where each entry should be in [0, n-1]
+    output:
+        - out: 4d-tensor with shape [b, h, s, d] where out[i,j] = x[i,j][indices[i,j],:]
+
+    A naive implementation:
+        out = torch.zeros(b, h, s, d)
+        for i in range(b):
+            for j in range(h):
+                out[i,j] = x[i,j][idx[i,j],:]
+        return out
+    """
+    if chunk_size < 0 or (chunk_size > 0 and x.shape[-2] % chunk_size == 0):
+        return x.gather(2, indices.unsqueeze(-1).expand(-1, -1, -1, x.shape[-1]))
+    else:
+        x = x.gather(2, indices.unsqueeze(-1).expand(-1, -1, -1, x.shape[-1]))
+        new_n = math.ceil(x.shape[2] / chunk_size) * chunk_size
+        if new_n <= 0 or new_n - x.shape[2] <= 0:
+            import pdb;
+            pdb.set_trace();
+        return torch.nn.functional.pad(x, (0, 0, 0, new_n - x.shape[2]), mode='constant', value=0.)

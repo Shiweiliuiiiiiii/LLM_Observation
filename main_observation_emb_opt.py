@@ -161,6 +161,18 @@ def parse_args():
         help="Batch size (per device) for the training dataloader.",
     )
     parser.add_argument(
+        "--sample_size",
+        type=int,
+        default=256,
+        help="sample size of V for hyperattention.",
+    )
+    parser.add_argument(
+        "--sample_method",
+        type=str,
+        help="ways for sketching",
+        required=False,
+    )
+    parser.add_argument(
         "--per_device_eval_batch_size",
         type=int,
         default=8,
@@ -587,7 +599,6 @@ def main():
                     v_norm[layer] = [m.v_norm.cpu().numpy().reshape(-1)]
                     a_norm[layer] = [m.a_norm.cpu().numpy().reshape(-1)]
 
-
         print('Status: [{}/{}]'.format(iterations+1, len(eval_dataloader)))
 
 
@@ -605,7 +616,6 @@ def main():
     # except OverflowError:
     #     perplexity = float("inf")
     # logger.info(f"Test: perplexity: {perplexity} test_loss: {eval_loss}")
-    #
 
     torch.save(v_norm, '{}-v-norm.pt'.format(args.output_name))
     torch.save(a_norm, '{}-a-norm.pt'.format(args.output_name))
