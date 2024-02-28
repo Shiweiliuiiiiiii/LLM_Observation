@@ -167,7 +167,7 @@ def parse_args():
         help="sample size of V for hyperattention.",
     )
     parser.add_argument(
-        "--sample_method",
+        "--sketching_method",
         type=str,
         help="ways for sketching",
         required=False,
