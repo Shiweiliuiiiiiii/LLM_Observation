@@ -416,7 +416,7 @@ def main():
 
     pretrained_weight = copy.deepcopy(model.state_dict())
     # model = convert_opt_emb_orth_output(model, config)
-    model = convert_opt_attention_norm(model, config)
+    model = convert_opt_attention_norm(model, config, args)
     model.load_state_dict(pretrained_weight, strict=True)
 
     print(model)

@@ -404,12 +404,12 @@ def convert_opt_attention_output(model, config):
     return model
 
 
-def convert_opt_attention_norm(model, config):
+def convert_opt_attention_norm(model, config, args):
 
     for name, module in reversed(model._modules.items()):
 
         if len(list(module.children())) > 0:
-            model._modules[name] = convert_opt_attention_norm(module, config)
+            model._modules[name] = convert_opt_attention_norm(module, config, args)
 
         if isinstance(module, OPTAttention):
             model._modules[name] = OPTAttention_norm_A_V(
@@ -418,8 +418,8 @@ def convert_opt_attention_norm(model, config):
                 dropout=config.attention_dropout,
                 is_decoder=True,
                 bias=config.enable_bias,
-                sample_size=config.sample_size,
-                sketching_method=config.sketching_method,
+                sample_size=args.sample_size,
+                sketching_method=args.sketching_method
             )
     return model
 
