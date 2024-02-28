@@ -196,7 +196,9 @@ class OPTAttention_norm_A_V(nn.Module):
         if self.sketching_method == 'random':
             sampled_set = torch.randint(n_key, size=(head_size, self.sample_size), device=value_states.device)
         elif self.sketching_method == 'l2':
-            index = torch.argsort(self.v_norm, dim=1)[::-1]
+            sampled_set = torch.argsort(self.v_norm, dim=1)[::-1][:,:n_key]
+        # elif self.sketching_method == 'mixed_multiply':
+        #     sampled_set =
 
          # value_subset.shape = [h, s, d], s < n;
         value_subset = indexing(value_states, sampled_set)
