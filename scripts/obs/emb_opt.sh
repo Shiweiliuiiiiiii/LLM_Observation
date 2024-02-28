@@ -20,5 +20,5 @@ CUDA_VISIBLE_DEVICES=${GPU} python -u main_observation_emb_opt.py \
     --per_device_eval_batch_size 1 \
     --per_device_train_batch_size 1 \
     --sample_size 256 \
-    --sketching_method l2 \
+    --sketching_method mixed_multiply \
     --output_name opt_6.7b_wiki103_att
