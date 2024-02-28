@@ -184,35 +184,31 @@ class OPTAttention_norm_A_V(nn.Module):
 
         attn_probs = nn.functional.dropout(attn_weights, p=self.dropout, training=self.training)
 
-        # calculate row norm of Value: 32 heads * 1024 dims
+        # calculate row norm of Value:  value_states.shape = torch.Size([32, 1024, 128]) self.v_norm.shape = [32, 1024]
         self.v_norm = value_states.norm(dim=2)
-        import pdb
-        pdb.set_trace()
         # calculate column norm of A: 32 heads * 1024 dims
         self.a_norm = attn_weights.norm(dim=1)
 
         # 1. sampling m from V matrix
-        batch_size, head_size, n_query, dim = value_states.shape
-        n_key = value_states.shape[2]
+        head_size, n_query, dim = value_states.shape
+        n_key = value_states.shape[1]
 
         if self.sketching_method == 'random':
-            sampled_set = torch.randint(n_key, size=(batch_size, head_size, self.sample_size), device=value_states.device)
+            sampled_set = torch.randint(n_key, size=(head_size, self.sample_size), device=value_states.device)
         elif self.sketching_method == 'l2':
-            index = np.argsort(self.v_norm)[::-1]
-            sampled_set = torch.randint(n_key, size=(batch_size, head_size, self.sample_size), device=value_states.device)
+            index = torch.argsort(self.v_norm, dim=1)[::-1]
 
-
-         # value_subset.shape = [b, h, s, d], s < n
+         # value_subset.shape = [h, s, d], s < n;
         value_subset = indexing(value_states, sampled_set)
         attn_subset = indexing(attn_probs.transpose(-1,-2), sampled_set).transpose(-1,-2)
-
 
         attn_output = torch.bmm(attn_probs, value_states)
         # m = |attn_probs*value_states - attn_subset*value_subset| / attn_probs*value_states
         attn_output_sub = torch.bmm(attn_subset, value_subset)
 
-        self.att_error = torch.norm(attn_output - attn_output_sub, p='fro')
+        self.att_error = torch.norm(attn_output - attn_output_sub, p='fro') / torch.norm(attn_output , p='fro')
 
+        print('attention error is {}'.format(self.att_error))
 
         if attn_output.size() != (bsz * self.num_heads, tgt_len, self.head_dim):
             raise ValueError(
@@ -1389,12 +1385,15 @@ def indexing(x, indices, chunk_size=-1):
                 out[i,j] = x[i,j][idx[i,j],:]
         return out
     """
-    if chunk_size < 0 or (chunk_size > 0 and x.shape[-2] % chunk_size == 0):
-        return x.gather(2, indices.unsqueeze(-1).expand(-1, -1, -1, x.shape[-1]))
-    else:
-        x = x.gather(2, indices.unsqueeze(-1).expand(-1, -1, -1, x.shape[-1]))
-        new_n = math.ceil(x.shape[2] / chunk_size) * chunk_size
-        if new_n <= 0 or new_n - x.shape[2] <= 0:
-            import pdb;
-            pdb.set_trace();
-        return torch.nn.functional.pad(x, (0, 0, 0, new_n - x.shape[2]), mode='constant', value=0.)
+    return x.gather(1, indices.unsqueeze(-1).expand(-1, -1, x.shape[-1]))
+    # if chunk_size < 0 or (chunk_size > 0 and x.shape[-2] % chunk_size == 0):
+    #     return x.gather(1, indices.unsqueeze(-1).expand(-1, -1, -1, x.shape[-1]))
+    # if chunk_size < 0 or (chunk_size > 0 and x.shape[-2] % chunk_size == 0):
+    #     return x.gather(1, indices.unsqueeze(-1).expand(-1, -1, -1, x.shape[-1]))
+    # else:
+    #     x = x.gather(2, indices.unsqueeze(-1).expand(-1, -1, -1, x.shape[-1]))
+    #     new_n = math.ceil(x.shape[2] / chunk_size) * chunk_size
+    #     if new_n <= 0 or new_n - x.shape[2] <= 0:
+    #         import pdb;
+    #         pdb.set_trace();
+    #     return torch.nn.functional.pad(x, (0, 0, 0, new_n - x.shape[2]), mode='constant', value=0.)
